@@ -8,6 +8,48 @@ def invert_img(img):
     img = (255-img)
     return img
 
+def demi_img_fun(img):
+    img_height = img.shape[0]
+    img_width = img.shape[1]
+    
+    #img_demi = img[(img_height/2):img_height , 0:img_width]
+    #img_demi = img[(img_height/2):img_height , (img_width/4):3*(img_width/4)]
+    #img_demi = img[4*(img_height/5):img_height , 0:img_width]   # Don't use this, it fails on some test cases
+    img_demi = img[4*(img_height/5):img_height , (img_width/4):3*(img_width/4)]
+
+    return img_demi
+
+def histogram_backprojection(img, img_demi):
+    hsvt = cv2.cvtColor(img_demi,cv2.COLOR_BGR2HSV)
+    hsvt_f = cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
+
+    # calculating object histogram
+    roihist = cv2.calcHist([hsvt],[0, 1], None, [180, 256], [0, 180, 0, 256] )
+     
+    # normalize histogram and apply backprojection
+    cv2.normalize(roihist,roihist,0,255,cv2.NORM_MINMAX)
+    dst = cv2.calcBackProject([hsvt_f],[0,1],roihist,[0,180,0,256],1)
+     
+    # Now convolute with circular disc
+    disc = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(5,5))
+    cv2.filter2D(dst,-1,disc,dst)
+     
+    # threshold and binary AND
+    ret,thresh = cv2.threshold(dst,50,255,0)
+    thresh_one = thresh.copy()
+    thresh = cv2.merge((thresh,thresh,thresh))
+    #res = cv2.bitwise_and(img,thresh)
+
+    return thresh
+
+def morph_trans(img):
+    # Implementing morphological erosion & dilation
+    kernel = np.ones((2,2),np.uint8)  # (6,6) to get more contours (9,9) to reduce noise
+    img = cv2.erode(img, kernel, iterations = 4) # Shrink to remove noise
+    img = cv2.dilate(img, kernel, iterations=4)  # Grow to combine stray blobs
+
+    return img
+
 def watershed(img, thresh):
     # noise removal
     kernel = np.ones((3,3), np.uint8)
@@ -49,37 +91,18 @@ def watershed(img, thresh):
 
 
 img = cv2.imread('images/road_11.jpg')
+#img = cv2.imread('images/road_4.jpg')
 img = imutils.resize(img, height = 300)
 
 img_height = img.shape[0]
 img_width = img.shape[1]
 
 # Getting the lower part of the image
+img_demi = demi_img_fun(img)
+thresh = histogram_backprojection(img, img_demi)
+#thresh = morph_trans(thresh)
 
-#img_demi = img[(img_height/2):img_height , 0:img_width]
-#img_demi = img[(img_height/2):img_height , (img_width/4):3*(img_width/4)]
-#img_demi = img[4*(img_height/5):img_height , 0:img_width]   # Don't use this, it fails on some test cases
-img_demi = img[4*(img_height/5):img_height , (img_width/4):3*(img_width/4)]
 
-hsvt = cv2.cvtColor(img_demi,cv2.COLOR_BGR2HSV)
-hsvt_f = cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
-
-# calculating object histogram
-roihist = cv2.calcHist([hsvt],[0, 1], None, [180, 256], [0, 180, 0, 256] )
- 
-# normalize histogram and apply backprojection
-cv2.normalize(roihist,roihist,0,255,cv2.NORM_MINMAX)
-dst = cv2.calcBackProject([hsvt_f],[0,1],roihist,[0,180,0,256],1)
- 
-# Now convolute with circular disc
-disc = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(5,5))
-cv2.filter2D(dst,-1,disc,dst)
- 
-# threshold and binary AND
-ret,thresh = cv2.threshold(dst,50,255,0)
-thresh_one = thresh.copy()
-thresh = cv2.merge((thresh,thresh,thresh))
-#res = cv2.bitwise_and(img,thresh)
 
 cv2.imshow('original', img)
 cv2.imshow('result', thresh)
