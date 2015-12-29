@@ -8,6 +8,52 @@ def invert_img(img):
     img = (255-img)
     return img
 
+def canny(imgray):
+    imgray = cv2.GaussianBlur(imgray, (5,5), 200)
+    canny_low = 5
+    canny_high = 150
+
+    thresh = cv2.Canny(imgray,canny_low,canny_high)
+    return thresh
+
+def filtering(imgray):
+    thresh = canny(imgray)
+    
+    minLineLength = 1
+    maxLineGap = 1
+
+
+    #lines = cv2.HoughLines(thresh,1,np.pi/180,0)
+    lines = cv2.HoughLinesP(thresh,2,np.pi/180,100,minLineLength,maxLineGap)
+    print lines.shape
+
+    for i in range(0,lines.shape[0]):
+        for x1,y1,x2,y2 in lines[i]:
+            cv2.line(img,(x1,y1),(x2,y2),(0,255,0),2)
+
+
+
+    '''
+    for i in range(0,5):
+        for rho,theta in lines[i]:
+            a = np.cos(theta)
+            b = np.sin(theta)
+            x0 = a*rho
+            y0 = b*rho
+            x1 = int(x0 + 1000*(-b))
+            y1 = int(y0 + 1000*(a))
+            x2 = int(x0 - 1000*(-b))
+            y2 = int(y0 - 1000*(a))
+
+            cv2.line(img,(x1,y1),(x2,y2),(0,0,255),2)
+    '''
+    '''
+    lines = cv2.HoughLinesP(thresh,1,np.pi/180,100,minLineLength,maxLineGap)
+    for x1,y1,x2,y2 in lines[0]:
+        cv2.line(img,(x1,y1),(x2,y2),(0,255,0),2)
+    '''
+    return thresh
+
 def demi_img_fun(img):
     img_height = img.shape[0]
     img_width = img.shape[1]
@@ -92,55 +138,17 @@ def watershed(img, thresh):
 
 #img = cv2.imread('images/road_11.jpg')
 img = cv2.imread('images/road_0.bmp')
+#img = cv2.imread('images/road_1.png')
 
-img = imutils.resize(img, height = 300)
+imgray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-img_height = img.shape[0]
-img_width = img.shape[1]
+img = imutils.resize(img, height = 500)
+imgray = imutils.resize(imgray, height = 500)
 
-# Getting the lower part of the image
-img_demi = demi_img_fun(img)
-thresh = histogram_backprojection(img, img_demi)
-#thresh = morph_trans(thresh)
-
+thresh = filtering(imgray)
 
 
 cv2.imshow('original', img)
 cv2.imshow('result', thresh)
 cv2.waitKey(0)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-'''
-
-gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-ret, thresh = cv2.threshold(gray,0,255,cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)
-
-
-thresh = invert_img(thresh)
-
-sure_bg, sure_fg = watershed(img, thresh)
-
-
-cv2.imshow('background',sure_bg)
-cv2.imshow('foreground',sure_fg)
-cv2.imshow('threshold',thresh)
-cv2.imshow('result',img)
-
-
-cv2.waitKey(0)
-'''
