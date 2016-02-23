@@ -9,30 +9,34 @@ def invert_img(img):
     return img
 
 def canny(imgray):
-    imgray = cv2.GaussianBlur(imgray, (5,5), 200)
-    canny_low = 5
-    canny_high = 150
+    #imgray = cv2.GaussianBlur(imgray, (5,5), 200)
+    canny_low = 100
+    canny_high = 180
 
     thresh = cv2.Canny(imgray,canny_low,canny_high)
     return thresh
 
 def filtering(imgray):
-    thresh = canny(imgray)
+    edges = canny(imgray)
     
-    minLineLength = 1
-    maxLineGap = 1
+    minLineLength = 200
+    maxLineGap = 300
 
+    retval, dst = cv2.threshold(edges, 128, 255,cv2.THRESH_BINARY_INV)
 
+    
     #lines = cv2.HoughLines(thresh,1,np.pi/180,0)
-    lines = cv2.HoughLinesP(thresh,2,np.pi/180,100,minLineLength,maxLineGap)
+    lines = cv2.HoughLinesP(dst,2,np.pi/180,100,minLineLength,maxLineGap)
     print lines.shape
 
+    # Code for HoughLinesP
+    
     for i in range(0,lines.shape[0]):
         for x1,y1,x2,y2 in lines[i]:
             cv2.line(img,(x1,y1),(x2,y2),(0,255,0),2)
+    
 
-
-
+    # Code for HoughLines
     '''
     for i in range(0,5):
         for rho,theta in lines[i]:
@@ -47,12 +51,8 @@ def filtering(imgray):
 
             cv2.line(img,(x1,y1),(x2,y2),(0,0,255),2)
     '''
-    '''
-    lines = cv2.HoughLinesP(thresh,1,np.pi/180,100,minLineLength,maxLineGap)
-    for x1,y1,x2,y2 in lines[0]:
-        cv2.line(img,(x1,y1),(x2,y2),(0,255,0),2)
-    '''
-    return thresh
+
+    return dst
 
 def demi_img_fun(img):
     img_height = img.shape[0]
@@ -147,6 +147,8 @@ imgray = imutils.resize(imgray, height = 500)
 
 thresh = filtering(imgray)
 
+cv2.imwrite('3.jpg', img)
+#cv2.imwrite('4.jpg', thresh)
 
 cv2.imshow('original', img)
 cv2.imshow('result', thresh)

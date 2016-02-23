@@ -90,8 +90,8 @@ def watershed(img, thresh):
 #img = cv2.imread('images/coins_clustered.jpg')
 
 
-#img = cv2.imread('images/road_11.jpg')
-img = cv2.imread('images/road_0.bmp')
+img = cv2.imread('images/road_4.jpg')
+#img = cv2.imread('images/road_0.bmp')
 
 img = imutils.resize(img, height = 300)
 
